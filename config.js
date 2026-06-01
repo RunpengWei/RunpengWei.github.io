@@ -4,7 +4,7 @@
  */
 var RESUME_CONFIG = {
   shared: {
-    name: "韦润苃",
+    name: "韦润芃",
     nameEn: "WEI Runpeng",
     phone: "(86) 185-2259-1129",
     email: "2501213758@stu.pku.edu.cn",

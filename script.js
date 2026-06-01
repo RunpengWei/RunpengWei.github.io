@@ -1,11 +1,28 @@
 /*
  * 简历网站交互逻辑
- * 版本切换 + 编辑面板 + 实时预览
+ * 版本切换 + 编辑面板 + 实时预览 + GitHub API 保存
  */
 (function() {
 
   var currentVersion = 'academic';
   var resumeData;
+  var editUnlocked = false;
+  var EDIT_PASSWORD = '0515';
+
+  // ===== GitHub 配置 =====
+  // Token 不存在代码里，首次使用时在浏览器中输入，保存在 localStorage
+  var GITHUB_CONFIG = {
+    owner: 'RunpengWei',
+    repo: 'RunpengWei.github.io'
+  };
+
+  function getGithubToken() {
+    try { return localStorage.getItem('gh_token') || ''; } catch(e) { return ''; }
+  }
+
+  function setGithubToken(token) {
+    try { localStorage.setItem('gh_token', token); } catch(e) {}
+  }
 
   // 安全深拷贝
   function deepCopy(obj) {
@@ -14,7 +31,6 @@
 
   // 初始化
   function init() {
-    // 检查配置是否加载
     if (typeof RESUME_CONFIG === 'undefined') {
       document.getElementById('displayName').textContent = '配置加载失败，请检查 config.js';
       return;
@@ -27,7 +43,6 @@
     bindEvents();
   }
 
-  // DOM 加载完成后执行
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
@@ -36,9 +51,20 @@
 
   // 事件绑定
   function bindEvents() {
-    // 编辑面板开关
+    // 编辑面板开关（需要密码验证）
     document.getElementById('editToggle').onclick = function() {
-      toggleEditPanel();
+      if (!editUnlocked) {
+        var pwd = prompt('请输入编辑密码：');
+        if (pwd === EDIT_PASSWORD) {
+          editUnlocked = true;
+          toggleEditPanel();
+          showToast('验证成功，已解锁编辑');
+        } else if (pwd !== null) {
+          showToast('密码错误');
+        }
+      } else {
+        toggleEditPanel();
+      }
     };
     document.getElementById('panelClose').onclick = function() {
       closeEditPanel();
@@ -63,7 +89,7 @@
     document.getElementById('editEmail').oninput = liveUpdate;
     document.getElementById('editSkills').oninput = liveUpdate;
 
-    // 保存重置
+    // 保存和重置
     document.getElementById('saveBtn').onclick = function() { saveData(); };
     document.getElementById('resetBtn').onclick = function() { resetData(); };
 
@@ -74,23 +100,14 @@
   // 版本切换
   function switchVersion(version) {
     currentVersion = version;
-
-    // 更新按钮
     var btns = document.querySelectorAll('.version-btn');
     for (var i = 0; i < btns.length; i++) {
       var v = btns[i].getAttribute('data-version');
-      if (v === version) {
-        btns[i].className = 'version-btn active';
-      } else {
-        btns[i].className = 'version-btn';
-      }
+      btns[i].className = (v === version) ? 'version-btn active' : 'version-btn';
     }
-
-    // 主题
     document.body.className = '';
     if (version === 'education') document.body.className = 'theme-education';
     if (version === 'corporate') document.body.className = 'theme-corporate';
-
     renderResume();
     populateEditPanel();
   }
@@ -100,27 +117,22 @@
     var shared = resumeData.shared;
     var ver = resumeData[currentVersion];
 
-    // 头部
     document.getElementById('displayName').textContent = shared.name;
     document.getElementById('displayTagline').textContent = ver.tagline;
     document.getElementById('displayBio').textContent = ver.bio;
     document.getElementById('navName').textContent = shared.name;
 
-    // 联系方式
     var contactHtml = '<span class="contact-item">Tel: ' + shared.phone + '</span>';
     contactHtml += '<span class="contact-item">Email: ' + shared.email + '</span>';
     document.getElementById('displayContact').innerHTML = contactHtml;
 
-    // 教育背景
     var eduHtml = '';
     for (var i = 0; i < shared.education.length; i++) {
       var edu = shared.education[i];
-      eduHtml += '<div class="edu-item">';
-      eduHtml += '<div class="edu-header"><div>';
+      eduHtml += '<div class="edu-item"><div class="edu-header"><div>';
       eduHtml += '<div class="edu-school">' + edu.school + ' · ' + edu.degree + '</div>';
       eduHtml += '<div class="edu-major">' + edu.major + '</div>';
-      eduHtml += '</div>';
-      eduHtml += '<span class="edu-time">' + edu.time + '</span></div>';
+      eduHtml += '</div><span class="edu-time">' + edu.time + '</span></div>';
       eduHtml += '<ul class="edu-details">';
       for (var j = 0; j < edu.details.length; j++) {
         eduHtml += '<li>' + edu.details[j] + '</li>';
@@ -129,14 +141,12 @@
     }
     document.getElementById('displayEducation').innerHTML = eduHtml;
 
-    // 荣誉
     var honorsHtml = '';
     for (var i = 0; i < shared.honors.length; i++) {
       honorsHtml += '<div class="honor-item">' + shared.honors[i] + '</div>';
     }
     document.getElementById('displayHonors').innerHTML = honorsHtml;
 
-    // 动态区块
     var secHtml = '';
     for (var s = 0; s < ver.sections.length; s++) {
       var sec = ver.sections[s];
@@ -145,16 +155,11 @@
       secHtml += '<div class="section-content">';
       for (var k = 0; k < sec.items.length; k++) {
         var item = sec.items[k];
-        secHtml += '<div class="exp-item">';
-        secHtml += '<div class="exp-header">';
+        secHtml += '<div class="exp-item"><div class="exp-header">';
         secHtml += '<span class="exp-role">' + item.role + '</span>';
-        if (item.time) {
-          secHtml += '<span class="exp-time">' + item.time + '</span>';
-        }
+        if (item.time) secHtml += '<span class="exp-time">' + item.time + '</span>';
         secHtml += '</div>';
-        if (item.org) {
-          secHtml += '<div class="exp-org">' + item.org + '</div>';
-        }
+        if (item.org) secHtml += '<div class="exp-org">' + item.org + '</div>';
         secHtml += '<ul class="exp-details">';
         for (var d = 0; d < item.details.length; d++) {
           secHtml += '<li>' + item.details[d] + '</li>';
@@ -165,7 +170,6 @@
     }
     document.getElementById('dynamicSections').innerHTML = secHtml;
 
-    // 技能
     var skillHtml = '';
     for (var i = 0; i < shared.skills.length; i++) {
       skillHtml += '<span class="skill-tag">' + shared.skills[i] + '</span>';
@@ -186,7 +190,6 @@
     renderEducationInputs();
   }
 
-  // 渲染教育输入框
   function renderEducationInputs() {
     var container = document.getElementById('editEducation');
     container.innerHTML = '';
@@ -196,40 +199,30 @@
       div.className = 'edu-input-group';
 
       var inp1 = document.createElement('input');
-      inp1.type = 'text';
-      inp1.value = edu.school;
+      inp1.type = 'text'; inp1.value = edu.school;
       inp1.placeholder = '学校';
-      inp1.setAttribute('data-idx', i);
-      inp1.setAttribute('data-field', 'school');
+      inp1.setAttribute('data-idx', i); inp1.setAttribute('data-field', 'school');
       inp1.oninput = eduInputChange;
 
       var inp2 = document.createElement('input');
-      inp2.type = 'text';
-      inp2.value = edu.major;
+      inp2.type = 'text'; inp2.value = edu.major;
       inp2.placeholder = '专业';
-      inp2.setAttribute('data-idx', i);
-      inp2.setAttribute('data-field', 'major');
+      inp2.setAttribute('data-idx', i); inp2.setAttribute('data-field', 'major');
       inp2.oninput = eduInputChange;
 
       var inp3 = document.createElement('input');
-      inp3.type = 'text';
-      inp3.value = edu.time;
+      inp3.type = 'text'; inp3.value = edu.time;
       inp3.placeholder = '时间段';
-      inp3.setAttribute('data-idx', i);
-      inp3.setAttribute('data-field', 'time');
+      inp3.setAttribute('data-idx', i); inp3.setAttribute('data-field', 'time');
       inp3.oninput = eduInputChange;
 
       var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'remove-edu-btn';
-      btn.textContent = '删除';
-      btn.setAttribute('data-idx', i);
+      btn.type = 'button'; btn.className = 'remove-edu-btn';
+      btn.textContent = '删除'; btn.setAttribute('data-idx', i);
       btn.onclick = removeEdu;
 
-      div.appendChild(inp1);
-      div.appendChild(inp2);
-      div.appendChild(inp3);
-      div.appendChild(btn);
+      div.appendChild(inp1); div.appendChild(inp2);
+      div.appendChild(inp3); div.appendChild(btn);
       container.appendChild(div);
     }
   }
@@ -250,11 +243,7 @@
 
   function addEducationEntry() {
     resumeData.shared.education.push({
-      school: '',
-      degree: '',
-      major: '',
-      time: '',
-      details: []
+      school: '', degree: '', major: '', time: '', details: []
     });
     renderEducationInputs();
   }
@@ -277,7 +266,6 @@
       if (s.length > 0) result.push(s);
     }
     shared.skills = result;
-
     renderResume();
   }
 
@@ -299,13 +287,107 @@
     document.getElementById('editToggle').className = 'edit-toggle-btn';
   }
 
-  // 保存
+  // ===== 保存逻辑（GitHub API） =====
   function saveData() {
+    // 先保存到 localStorage 作为即时备份
     try {
       localStorage.setItem('resume_data_v3', JSON.stringify(resumeData));
       localStorage.setItem('resume_version_v3', currentVersion);
     } catch(e) {}
-    showToast('保存成功！');
+
+    // 检查 GitHub Token
+    var token = getGithubToken();
+    if (!token) {
+      token = prompt('首次同步，请输入你的 GitHub Token（ghp_开头）：');
+      if (!token || token.indexOf('ghp_') !== 0) {
+        showToast('已保存到本地。输入有效Token后可云端同步。');
+        return;
+      }
+      setGithubToken(token);
+    }
+
+    // 推送到 GitHub
+    showToast('正在同步到 GitHub...');
+    pushToGitHub();
+  }
+
+  function pushToGitHub() {
+    var fileContent = generateConfigFileContent();
+    var path = 'config.js';
+    var token = getGithubToken();
+    var url = 'https://api.github.com/repos/' + GITHUB_CONFIG.owner + '/' + GITHUB_CONFIG.repo + '/contents/' + path;
+
+    var xhr1 = new XMLHttpRequest();
+    xhr1.open('GET', url, true);
+    xhr1.setRequestHeader('Authorization', 'token ' + token);
+    xhr1.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+    xhr1.onload = function() {
+      var sha = '';
+      if (xhr1.status === 200) {
+        var resp = JSON.parse(xhr1.responseText);
+        sha = resp.sha;
+      }
+      // 第二步：提交更新
+      commitFile(url, fileContent, sha);
+    };
+    xhr1.onerror = function() {
+      showToast('网络错误，请检查网络连接');
+    };
+    xhr1.send();
+  }
+
+  function commitFile(url, content, sha) {
+    var body = {
+      message: '更新简历内容 [' + new Date().toLocaleString('zh-CN') + ']',
+      content: utf8ToBase64(content)
+    };
+    if (sha) {
+      body.sha = sha;
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('PUT', url, true);
+    xhr.setRequestHeader('Authorization', 'token ' + getGithubToken());
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+    xhr.onload = function() {
+      if (xhr.status === 200 || xhr.status === 201) {
+        showToast('已同步到 GitHub！网站将在1-2分钟内更新。');
+      } else {
+        var errMsg = '同步失败';
+        try {
+          var resp = JSON.parse(xhr.responseText);
+          errMsg += '：' + (resp.message || '未知错误');
+        } catch(e) {}
+        showToast(errMsg);
+      }
+    };
+    xhr.onerror = function() {
+      showToast('网络错误，同步失败');
+    };
+    xhr.send(JSON.stringify(body));
+  }
+
+  // 生成 config.js 文件内容
+  function generateConfigFileContent() {
+    var lines = [];
+    lines.push('/*');
+    lines.push(' * 简历配置文件 - 所有内容都在这里修改');
+    lines.push(' * 修改后保存，刷新浏览器即可看到变化');
+    lines.push(' */');
+    lines.push('var RESUME_CONFIG = ' + JSON.stringify(resumeData, null, 2) + ';');
+    return lines.join('\n');
+  }
+
+  // UTF-8 字符串转 Base64（支持中文）
+  function utf8ToBase64(str) {
+    var encoder = new TextEncoder();
+    var bytes = encoder.encode(str);
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   }
 
   function loadSavedData() {
@@ -322,18 +404,14 @@
         var btns = document.querySelectorAll('.version-btn');
         for (var i = 0; i < btns.length; i++) {
           var v = btns[i].getAttribute('data-version');
-          if (v === currentVersion) {
-            btns[i].className = 'version-btn active';
-          } else {
-            btns[i].className = 'version-btn';
-          }
+          btns[i].className = (v === currentVersion) ? 'version-btn active' : 'version-btn';
         }
       }
     } catch(e) {}
   }
 
   function resetData() {
-    if (!confirm('确定重置所有修改？')) return;
+    if (!confirm('确定重置所有修改？将恢复为线上版本。')) return;
     resumeData = deepCopy(RESUME_CONFIG);
     try {
       localStorage.removeItem('resume_data_v3');
@@ -346,6 +424,10 @@
 
   // Toast
   function showToast(msg) {
+    // 移除旧的 toast
+    var old = document.querySelector('.toast');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+
     var t = document.createElement('div');
     t.className = 'toast';
     t.textContent = msg;
@@ -356,7 +438,7 @@
       setTimeout(function() {
         if (t.parentNode) t.parentNode.removeChild(t);
       }, 300);
-    }, 2000);
+    }, 3000);
   }
 
 })();
