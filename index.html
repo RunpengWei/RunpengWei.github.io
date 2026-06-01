@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>韦润芃 - 个人简历</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <nav class="top-nav" id="topNav">
+    <div class="nav-left">
+      <span class="nav-logo">CV</span>
+      <span class="nav-name" id="navName">韦润芃</span>
+    </div>
+    <div class="nav-center">
+      <button type="button" class="version-btn active" data-version="academic" id="btnAcademic">
+        <span class="btn-icon">&#127891;</span><span class="btn-text">学术版</span>
+      </button>
+      <button type="button" class="version-btn" data-version="education" id="btnEducation">
+        <span class="btn-icon">&#128214;</span><span class="btn-text">教育版</span>
+      </button>
+      <button type="button" class="version-btn" data-version="corporate" id="btnCorporate">
+        <span class="btn-icon">&#127970;</span><span class="btn-text">大厂版</span>
+      </button>
+    </div>
+    <div class="nav-right">
+      <button type="button" class="edit-toggle-btn" id="editToggle">
+        <span class="edit-icon">&#9998;</span><span class="btn-text">编辑</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 主体内容区 -->
+  <div class="main-container" id="mainContainer">
+    <!-- 编辑面板（默认隐藏） -->
+    <aside class="edit-panel" id="editPanel">
+      <div class="panel-header">
+        <h3>编辑面板</h3>
+        <button type="button" class="panel-close" id="panelClose">&#10005;</button>
+      </div>
+      <div class="panel-body">
+        <!-- 基本信息编辑 -->
+        <div class="edit-section">
+          <h4>基本信息</h4>
+          <label for="editName">姓名</label>
+          <input type="text" id="editName" placeholder="姓名">
+          <label for="editTagline">职位标签</label>
+          <input type="text" id="editTagline" placeholder="职位/方向描述">
+          <label for="editBio">个人简介</label>
+          <textarea id="editBio" rows="4" placeholder="一段话介绍自己"></textarea>
+        </div>
+
+        <!-- 联系方式编辑 -->
+        <div class="edit-section">
+          <h4>联系方式</h4>
+          <label for="editPhone">手机</label>
+          <input type="text" id="editPhone" placeholder="电话号码">
+          <label for="editEmail">邮箱</label>
+          <input type="text" id="editEmail" placeholder="邮箱地址">
+        </div>
+
+        <!-- 教育背景编辑 -->
+        <div class="edit-section">
+          <h4>教育背景</h4>
+          <div id="editEducation"></div>
+          <button type="button" class="add-btn" id="addEducation">+ 添加教育经历</button>
+        </div>
+
+        <!-- 技能标签编辑 -->
+        <div class="edit-section">
+          <h4>技能标签</h4>
+          <textarea id="editSkills" rows="3" placeholder="用逗号分隔多个技能"></textarea>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="edit-actions">
+          <button type="button" class="save-btn" id="saveBtn">保存更改</button>
+          <button type="button" class="reset-btn" id="resetBtn">重置</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 简历展示区 -->
+    <main class="resume-display" id="resumeDisplay">
+      <!-- 头部信息 -->
+      <header class="resume-header" id="resumeHeader">
+        <div class="header-content">
+          <h1 class="resume-name" id="displayName"></h1>
+          <p class="resume-tagline" id="displayTagline"></p>
+          <p class="resume-bio" id="displayBio"></p>
+          <div class="contact-info" id="displayContact"></div>
+        </div>
+      </header>
+
+      <!-- 教育背景 -->
+      <section class="resume-section" id="sectionEducation">
+        <h2 class="section-title">
+          <span class="section-icon">&#127891;</span> 教育背景
+        </h2>
+        <div class="section-content" id="displayEducation"></div>
+      </section>
+
+      <!-- 荣誉奖励 -->
+      <section class="resume-section" id="sectionHonors">
+        <h2 class="section-title">
+          <span class="section-icon">&#127942;</span> 荣誉奖励
+        </h2>
+        <div class="section-content" id="displayHonors"></div>
+      </section>
+
+      <!-- 动态内容区（根据版本变化） -->
+      <div id="dynamicSections"></div>
+
+      <!-- 技能标签 -->
+      <section class="resume-section" id="sectionSkills">
+        <h2 class="section-title">
+          <span class="section-icon">&#9881;</span> 专业技能
+        </h2>
+        <div class="skills-container" id="displaySkills"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 底部信息 -->
+  <footer class="site-footer">
+    <p>Made with care by 韦润芃 | 最后更新：2026年6月</p>
+  </footer>
+
+  <!-- 引入脚本 -->
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
