@@ -155,9 +155,13 @@
       secHtml += '<div class="section-content">';
       for (var k = 0; k < sec.items.length; k++) {
         var item = sec.items[k];
-        secHtml += '<div class="exp-item"><div class="exp-header">';
+        secHtml += '<div class="exp-item collapsible expanded">';
+        secHtml += '<div class="exp-header exp-toggle">';
         secHtml += '<span class="exp-role">' + item.role + '</span>';
+        secHtml += '<span class="exp-header-right">';
         if (item.time) secHtml += '<span class="exp-time">' + item.time + '</span>';
+        secHtml += '<span class="toggle-icon"></span>';
+        secHtml += '</span>';
         secHtml += '</div>';
         if (item.org) secHtml += '<div class="exp-org">' + item.org + '</div>';
         secHtml += '<ul class="exp-details">';
@@ -169,6 +173,7 @@
       secHtml += '</div></section>';
     }
     document.getElementById('dynamicSections').innerHTML = secHtml;
+    bindCollapsible();
 
     var skillHtml = '';
     for (var i = 0; i < shared.skills.length; i++) {
@@ -420,6 +425,21 @@
     renderResume();
     populateEditPanel();
     showToast('已重置');
+  }
+
+  // 展开/收起交互
+  function bindCollapsible() {
+    var toggles = document.querySelectorAll('.exp-toggle');
+    for (var i = 0; i < toggles.length; i++) {
+      toggles[i].onclick = function() {
+        var item = this.parentElement;
+        if (item.className.indexOf('expanded') >= 0) {
+          item.className = item.className.replace(' expanded', ' collapsed');
+        } else {
+          item.className = item.className.replace(' collapsed', ' expanded');
+        }
+      };
+    }
   }
 
   // Toast
